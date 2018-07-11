@@ -423,6 +423,7 @@ workflows:
           branches:
             ignore:
             - 7.5.x
+            - sandbox/*
     - build_engine_war:
         requires:
         - build_engine_jar
