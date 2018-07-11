@@ -15,15 +15,28 @@ buildscript {
 import com.monochromeroad.gradle.plugin.aws.s3.S3Sync
 
 apply from: 'headers.gradle'
+apply from: 'convertigo-splash/build.gradle'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 
 def convertigoVersion = '7.6.0'
 def convertigoTag = 'beta'
+def convertigoCodename = 'osmium'
+def convertigoCode = 'Os'
 def convertigoRevision = hasProperty('convertigoRevision') ? convertigoRevision : ''
 def jxBrowserVersion = '6.19.1'
 
 def convertigoEngineAPI = '7.6.0-SNAPSHOT'
+
+def convertigoVersionFull = "${convertigoVersion}${convertigoTag.isEmpty() ? '' : '-' + convertigoTag}"
+
+tasks.getByPath('convertigo-splash:run').systemProperties(
+	'c8o_version': "V ${convertigoVersionFull}",
+	'c8o_codename': convertigoCodename,
+	'c8o_code': convertigoCode,
+	'c8o_copyright': "Copyright © 2001-${Calendar.getInstance().get(Calendar.YEAR)} - Convertigo",
+	'c8o_output': '../eclipse-plugin-product/splash.bmp'
+)
 
 task updateVersion(dependsOn: [':engine:updateProductVersion', 'writeManifest']) {
 	group 'convertigo'
@@ -37,7 +50,7 @@ eclipse {
 }
 
 allprojects {
-	version "${convertigoVersion}${convertigoTag.isEmpty() ? '' : '-' + convertigoTag}"
+	version convertigoVersionFull
 	
 	repositories {
 		mavenLocal()
@@ -57,6 +70,19 @@ allprojects {
 	if (project.name.startsWith('eclipse-plugin')) {
 		apply plugin: 'java'
 		
+		sourceSets {
+			main {
+				java {
+					exclude '.placeholder'
+					srcDir 'src'
+				}
+				resources {
+					exclude '.placeholder'
+					srcDir 'src'
+				}
+			}
+		}
+		
 		eclipse {
 			project {
 				natures 'org.eclipse.jdt.core.javanature',
@@ -75,9 +101,10 @@ allprojects {
 		}
 		
 		task syncLib(type: Sync) {
+			group 'convertigo'
+			
 			into 'lib'
 			from configurations.runtime
-			group 'convertigo'
 		}
 		
 		tasks.removeAll assemble, build, buildDependents, buildNeeded, clean, jar, javadoc, check, test, testClasses, classes
@@ -145,6 +172,8 @@ project(':eclipse-plugin-jxbrowser-linux64') {
 	}
 	
 	task writeManifest(dependsOn: syncLib) {
+		group 'convertigo'
+		
 		doLast {
 			def manifest = file 'META-INF/MANIFEST.MF'
 			project.manifest {
@@ -160,7 +189,6 @@ project(':eclipse-plugin-jxbrowser-linux64') {
 			}.writeTo(manifest)
 			manifest.text = manifest.text.replaceAll("Import-Package: .*\\s+", "")
 		}
-		group 'convertigo'
 	}
 }
 
@@ -170,6 +198,8 @@ project(':eclipse-plugin-jxbrowser-mac') {
 	}
 	
 	task writeManifest(dependsOn: syncLib) {
+		group 'convertigo'
+		
 		doLast {
 			def manifest = file 'META-INF/MANIFEST.MF'
 			project.manifest {
@@ -185,7 +215,6 @@ project(':eclipse-plugin-jxbrowser-mac') {
 			}.writeTo(manifest)
 			manifest.text = manifest.text.replaceAll("Import-Package: .*\\s+", "")
 		}
-		group 'convertigo'
 	}
 }
 
@@ -195,6 +224,8 @@ project(':eclipse-plugin-jxbrowser-win') {
 	}
 	
 	task writeManifest(dependsOn: syncLib) {
+		group 'convertigo'
+		
 		doLast {
 			def manifest = file 'META-INF/MANIFEST.MF'
 			project.manifest {
@@ -210,20 +241,13 @@ project(':eclipse-plugin-jxbrowser-win') {
 			}.writeTo(manifest)
 			manifest.text = manifest.text.replaceAll("Import-Package: .*\\s+", "")
 		}
-		group 'convertigo'
 	}
 }
 
 project(':eclipse-plugin-product') {
-	sourceSets {
-		main {
-			java {
-				srcDir 'src'
-			}
-		}
-	}
-	
 	task writeManifest(dependsOn: syncLib) {
+		group 'convertigo'
+		
 		doLast {
 			def manifest = file 'META-INF/MANIFEST.MF'
 			project.manifest {
@@ -246,8 +270,6 @@ project(':eclipse-plugin-product') {
 			}.writeTo(manifest)
 			manifest.text = manifest.text.replaceAll("Import-Package: .*\\s+", "")
 		}
-		
-		group 'convertigo'
 	}
 }
 
@@ -259,8 +281,6 @@ project(':eclipse-plugin-studio') {
 				exclude 'com/twinsoft/convertigo/engine/plugins/InfogreffeBiller.java'
 				exclude 'com/twinsoft/convertigo/engine/plugins/InseeBiller.java'
 				exclude 'com/twinsoft/convertigo/engine/plugins/LCABiller.java'
-				exclude '.placeholder'
-				srcDir 'src'
 				srcDir 'patch'
 			}
 			resources {
@@ -268,8 +288,6 @@ project(':eclipse-plugin-studio') {
 				exclude 'com/twinsoft/convertigo/engine/plugins/InfogreffeBiller.java'
 				exclude 'com/twinsoft/convertigo/engine/plugins/InseeBiller.java'
 				exclude 'com/twinsoft/convertigo/engine/plugins/LCABiller.java'
-				exclude '.placeholder'
-				srcDir 'src'
 				srcDir 'patch'
 			}
 		}
@@ -371,11 +389,14 @@ project(':eclipse-plugin-xulrunner-win32') {
 	
 	task untarXulrunner(type: Copy) {
 		group 'convertigo'
+		
 		from tarTree(resources.gzip(configurations.xul[0]))
 		into 'xulrunner'
 	}
 	
 	task writeManifest(dependsOn: untarXulrunner) {
+		group 'convertigo'
+		
 		doLast {
 			def manifest = file 'META-INF/MANIFEST.MF'
 			project.manifest {
@@ -393,15 +414,14 @@ project(':eclipse-plugin-xulrunner-win32') {
 			}.writeTo(manifest)
 			manifest.text = manifest.text.replaceAll("Import-Package: .*\\s+", "")
 		}
-		group 'convertigo'
 	}
 }
 
 project(':engine') {
+	group 'com.convertigo.webapp'
+	
 	apply plugin: 'war'
 	apply plugin: 'eclipse-wtp'
-	
-	group 'com.convertigo.webapp'
 	
 	webAppDirName = 'convertigo'
 	
@@ -461,6 +481,7 @@ project(':engine') {
 				exclude 'com/twinsoft/convertigo/engine/plugins/InfogreffeBiller.java'
 				exclude 'com/twinsoft/convertigo/engine/plugins/InseeBiller.java'
 				exclude 'com/twinsoft/convertigo/engine/plugins/LCABiller.java'
+				exclude '.placeholder'
 				srcDir 'src'
 				srcDir 'patch'
 			}
@@ -469,7 +490,9 @@ project(':engine') {
 				exclude 'com/twinsoft/convertigo/engine/plugins/InfogreffeBiller.java'
 				exclude 'com/twinsoft/convertigo/engine/plugins/InseeBiller.java'
 				exclude 'com/twinsoft/convertigo/engine/plugins/LCABiller.java'
+				exclude '.placeholder'
 				srcDir 'src'
+				srcDir 'patch'
 			}
 		}
 	}
@@ -656,7 +679,7 @@ ext.sharedManifest = project(':engine').manifest {
 	)
 }
 
-task writeManifest(dependsOn: 'updateEclipseVersion') {
+task writeManifest(dependsOn:  ['updateEclipseVersion', 'makeSplash']) {
 	group 'convertigo'
 	
 	def wm = getTasksByName 'writeManifest', true
@@ -710,5 +733,9 @@ task generateEclipseConfiguration(dependsOn: [getTasksByName('cleanEclipse', tru
 }
 
 task generateEclipseConfigurationWithManifest(dependsOn: ['generateEclipseConfiguration', 'writeManifest']) {
+	group 'convertigo'
+}
+
+task makeSplash(dependsOn: 'convertigo-splash:run') {
 	group 'convertigo'
 }
