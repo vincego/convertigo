@@ -404,6 +404,13 @@ public class CarUtils {
 				
 				sb.append(pad).append("name: ").append(xPathAPI.selectNode(property, "*/@value").getTextContent()).append('\n');
 				
+				if (element.hasAttribute("priority")) {
+					String priority = element.getAttribute("priority");
+					if (!"0".equals(priority)) {
+						sb.append(pad).append("priority: ").append(priority).append('\n');
+					}
+				}
+				
 				NodeIterator properties = xPathAPI.selectNodeIterator(element, "property[@name]");
 				property = (Element) properties.nextNode(); 
 				while (property != null) {
@@ -411,7 +418,8 @@ public class CarUtils {
 					if (nValue != null) {
 						String name = property.getAttribute("name");
 						String value = nValue.getTextContent();
-						String defValue = xPathAPI.selectNode(nElement, "property[@name=\"" + name + "\"]/*/@value").getTextContent();
+						nValue = xPathAPI.selectNode(nElement, "property[@name=\"" + name + "\"]/*/@value");
+						String defValue = nValue == null ? null : nValue.getTextContent();
 						if (!value.equals(defValue)) {
 							if (value.contains("\n")) {
 								value = ">\n " + value.replace("\n", "\n ");
